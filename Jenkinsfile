@@ -12,22 +12,22 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-               git branch: 'main', url: 'https://github.com/husasin110/cicd-jenkins-project.git'
+                git 'https://github.com/husasin110/cicd-jenkins-project.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t $ECR_REPO:$IMAGE_TAG ."
+                sh "docker build -t ${ECR_REPO}:${IMAGE_TAG} ."
             }
         }
 
         stage('Login to ECR') {
             steps {
-                withAWS(credentials: 'aws-jenkins', region: AWS_REGION) {
+                withAWS(credentials: 'aws-jenkins', region: "${AWS_REGION}") {
                     sh """
-                    aws ecr get-login-password --region $AWS_REGION | \
-                    docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+                    aws ecr get-login-password --region ${AWS_REGION} | \
+                    docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
                     """
                 }
             }
@@ -36,8 +36,8 @@ pipeline {
         stage('Push to ECR') {
             steps {
                 sh """
-                docker tag $ECR_REPO:$IMAGE_TAG $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
-                docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
+                docker tag ${ECR_REPO}:${IMAGE_TAG} ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}
+                docker push ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}
                 """
             }
         }

@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         AWS_REGION = "us-east-1"
-        ECR_REPO = "myapp-repo"
-        IMAGE_TAG = "${BUILD_NUMBER}"
+        ECR_REPO   = "myapp-repo"
+        IMAGE_TAG  = "${BUILD_NUMBER}"
         ACCOUNT_ID = "700125623035"
     }
 
@@ -42,5 +42,17 @@ pipeline {
             }
         }
     }
-}
 
+    // ✅ POST BLOCK MUST BE OUTSIDE stages {}
+    post {
+        success {
+            echo "✅ Build Successful: Image pushed to ECR"
+        }
+        failure {
+            echo "❌ Build Failed"
+        }
+        always {
+            echo "Pipeline finished at: ${new Date()}"
+        }
+    }
+}

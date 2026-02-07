@@ -6,7 +6,7 @@ pipeline {
         ECR_REPO   = "myapp-repo"
         IMAGE_TAG  = "${BUILD_NUMBER}"
         ACCOUNT_ID = "700125623035"
-        EC2_IP     = "3.88.113.13"   // 🔴 CHANGE THIS
+        EC2_IP     = "3.88.113.13"
     }
 
     stages {
@@ -43,27 +43,24 @@ pipeline {
             }
         }
 
-        // ✅ DEPLOY TO EC2
         stage('Deploy to EC2') {
             steps {
                 sshagent(['ec2-key']) {
                     sh """
-                    ssh ec2-user@${EC2_IP} '
-                        aws ecr get-login-password --region ${AWS_REGION} | \
-                        docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-
-                        docker pull ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}
-                        docker stop myapp || true
-                        docker rm myapp || true
-                        docker run -d -p 80:3000 --name myapp ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}
-                    '
+                    ssh -o StrictHostKeyChecking=no ec2-user@${EC2_IP} << EOF
+                    aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                    
+                    docker pull ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}
+                    docker stop myapp || true
+                    docker rm myapp || true
+                    docker run -d -p 80:3000 --name myapp ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}
+                    EOF
                     """
                 }
             }
         }
     }
 
-    // ✅ BUILD STATUS MESSAGES
     post {
         success {
             echo "✅ Build & Deployment Successful!"
